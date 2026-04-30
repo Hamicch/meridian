@@ -18,6 +18,7 @@ export function ChatInterface() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const endRef = useRef<HTMLDivElement | null>(null);
+  const isImeComposingRef = useRef(false);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -88,10 +89,16 @@ export function ChatInterface() {
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
-      event.preventDefault();
-      void sendMessage();
+    const isEnter =
+      event.key === "Enter" || event.code === "Enter" || event.code === "NumpadEnter";
+    if (!isEnter || event.shiftKey) {
+      return;
     }
+    if (isImeComposingRef.current) {
+      return;
+    }
+    event.preventDefault();
+    void sendMessage();
   }
 
   return (
@@ -122,6 +129,12 @@ export function ChatInterface() {
           <textarea
             value={input}
             onChange={(event) => setInput(event.target.value)}
+            onCompositionStart={() => {
+              isImeComposingRef.current = true;
+            }}
+            onCompositionEnd={() => {
+              isImeComposingRef.current = false;
+            }}
             onKeyDown={handleKeyDown}
             placeholder="How can Meridian help?"
             disabled={isLoading}

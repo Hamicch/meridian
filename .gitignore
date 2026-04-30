@@ -19,3 +19,6 @@ out/
 # misc
 .DS_Store
 *.png
+
+AGENT.md
+TRACKING.md

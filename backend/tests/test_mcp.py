@@ -1,5 +1,11 @@
+import os
 import pytest
 from app.tools.mcp_client import get_tools
+
+pytestmark = pytest.mark.skipif(
+    not os.getenv("MCP_SERVER_URL"),
+    reason="MCP_SERVER_URL not set — skipping integration tests"
+)
 
 
 @pytest.mark.asyncio

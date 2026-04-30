@@ -1,10 +1,14 @@
 import json
+import time
+from opentelemetry import trace
 from mcp import ClientSession
 from mcp.client.streamable_http import streamablehttp_client
 from ..llm.client import client
 from ..tools.mcp_client import format_for_openai
 from ..models.chat import Message
 from ..configs.settings import MCP_SERVER_URL, OPENAI_MODEL
+
+tracer = trace.get_tracer(__name__)
 
 SYSTEM_PROMPT = (
     "You are Meridian Electronics' customer support assistant. "
@@ -46,10 +50,13 @@ async def run_agent(messages: list[Message]) -> str:
                 thread.append(choice.message)
 
                 for tc in choice.message.tool_calls:
-                    result = await session.call_tool(
-                        tc.function.name,
-                        json.loads(tc.function.arguments),
-                    )
+                    args = json.loads(tc.function.arguments)
+                    with tracer.start_as_current_span(f"mcp.tool.{tc.function.name}") as span:
+                        span.set_attribute("tool.name", tc.function.name)
+                        span.set_attribute("tool.arguments", json.dumps(args))
+                        start = time.perf_counter()
+                        result = await session.call_tool(tc.function.name, args)
+                        span.set_attribute("tool.latency_ms", round((time.perf_counter() - start) * 1000))
                     thread.append({
                         "role": "tool",
                         "tool_call_id": tc.id,

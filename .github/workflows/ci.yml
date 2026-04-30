@@ -35,7 +35,7 @@ jobs:
         with:
           node-version: "20"
       - run: npm ci
-      - run: npm run type-check
+      - run: npm run typecheck
       - run: npm run build
         env:
           BACKEND_URL: ${{ secrets.BACKEND_URL }}
